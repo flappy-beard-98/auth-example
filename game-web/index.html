@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CLIENT</title>
+</head>
+<body>
+    <button id="authButton">Login</button>
+    <p id="session">session_id appears here</p>
+    <p id="result">auth results appears here</p>
+
+    <script>
+        document.getElementById('authButton').addEventListener('click', function () {
+            // Initiate the authentication process by sending a POST request to the game-backend
+            fetch('{{.GameBackendURL}}/auth', {
+                method: 'POST',
+                credentials: 'include'
+            })
+            .then(response => response.json())
+            .then(data => {
+                // The game-backend returns a session_id and a URL for the OAuth flow (authFrontendUrl)
+                const authWindow = window.open(data.authFrontendUrl, 'oauth', 'width=600,height=600');
+                const sessionId = data.sessionId;
+                
+                document.getElementById("session").textContent = `recieved session_id=${data.sessionId}`
+                
+                // Periodically check the backend to see if the authentication session is complete
+                const pollTimer = setInterval(function() {
+                    fetch(`{{.GameBackendURL}}/session?session_id=${sessionId}`, {
+                        credentials: 'include'
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        // When login and OTP are received, stop polling and complete the authentication
+                        if (data.login && data.otp) {
+                            clearInterval(pollTimer);
+                            authWindow.close();
+                            document.getElementById("result").textContent = 
+                                `user authenticated, login=${data.login}, otp=${data.otp}`;
+                        }
+                    });
+                }, 1000);
+            });
+        });
+    </script>
+</body>
+</html>

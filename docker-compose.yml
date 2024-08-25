@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  auth-backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE_DIR: ./auth-backend
+    environment:
+      - USER=user
+      - PASSWORD=123
+      - AUTH_FRONTEND=http://localhost:35182
+      - CLIENT_ID=client_id_1
+    ports:
+      - "35181:8080"
+
+  auth-frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE_DIR: ./auth-frontend
+    environment:
+      - AUTH_BACKEND_URL=http://localhost:35181
+    ports:
+      - "35182:8080"
+
+  game-backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE_DIR: ./game-backend
+    environment:
+      - AUTH_BACKEND_URL=http://auth-backend:8080
+      - BACKEND_URL=http://localhost:35183
+      - CLIENT_ID=client_id_1
+    ports:
+      - "35183:8080"
+
+  game-web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE_DIR: ./game-web
+    environment:
+      - GAME_BACKEND_URL=http://localhost:35183
+    ports:
+      - "35184:8080"

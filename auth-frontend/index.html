@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AUTH</title>
+</head>
+<body>
+    <form id="loginForm">
+        <input type="text" id="username" name="username" placeholder="Username" required>
+        <input type="password" id="password" name="password" placeholder="Password" required>
+        <button type="submit">Login</button>
+    </form>
+    <p id="result"></p>
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', function(event) {
+            event.preventDefault(); 
+
+            const formData = new FormData(this);  
+            const params = new URLSearchParams();
+        
+            for (const [key, value] of formData.entries()) {
+                params.append(key, value);
+            }
+            const queryParams = new URLSearchParams(window.location.search);
+            params.append('grant_type','login_otp');
+            params.append('client_id', queryParams.get('client_id'));
+        
+            // Post the user's credentials to the OAuth backend to obtain login and otp
+            fetch('{{.AuthBackendURL}}/oauth/token', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'  
+                },
+                credentials: 'include', 
+                body: params  
+            })
+            .then(response => response.json())
+            .then(result => {
+                // When login and otp are received, redirect to the game-backend with these values
+                if (result.login && result.otp) {
+                    const redirectURI = queryParams.get('redirect_uri');  
+                    const state = queryParams.get('state');
+                    window.location.href = `${redirectURI}?login=${result.login}&otp=${result.otp}&state=${state}`;
+                } else {
+                    document.getElementById("result").textContent = "authentication failed" 
+                }
+            });
+        });
+    </script>
+</body>
+</html>
